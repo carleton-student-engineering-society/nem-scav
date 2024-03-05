@@ -70,7 +70,6 @@ def register(access_token=None, expires_in=None, refresh_token=None, user=None, 
         team.reset_scavenger_progress()
         team.save()
 
-
     # Create new DiscordUser
     discord_user = DiscordUser(
         id=discord_user_id, user=user, discord_username=discord_username, discriminator=discord_discriminator)
