@@ -92,14 +92,11 @@ else:
 if development:
     ALLOWED_HOSTS = [
         "127.0.0.1",
-        "localhost",
-        "server.engfrosh.com",
-        "engfrosh.com"
+        "localhost"
     ]
 else:
     ALLOWED_HOSTS = [
-        "time.engfrosh.com",
-        ".engfrosh.com"
+        "*.mycses.ca"
     ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -121,7 +118,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 DEFAULT_DISCORD_API_VERSION = 10
 DEFAULT_DISCORD_SCOPE = ["identify", "guilds.join"]
 if not development:
-    SESSION_COOKIE_DOMAIN = ".engfrosh.com"
+    SESSION_COOKIE_DOMAIN = ".mycses.ca"
 
 # Model Defaults
 DEFAULT_SCAVENGER_PUZZLE_REQUIRE_PHOTO_UPLOAD = True
