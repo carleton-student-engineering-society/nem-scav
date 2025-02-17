@@ -103,10 +103,8 @@ else:
     ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.engfrosh.com",
-    "https://time.engfrosh.com",
-    "http://*.engfrosh.com",
-    "http://time.engfrosh.com"
+    "https://*.mycses.ca",
+    "http://*.mycses.ca",
 ]
 
 REST_FRAMEWORK = {
