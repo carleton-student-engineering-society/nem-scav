@@ -92,11 +92,12 @@ else:
 if development:
     ALLOWED_HOSTS = [
         "127.0.0.1",
-        "localhost"
+        "localhost",
+        "nem-scav.mycses.ca"
     ]
 else:
     ALLOWED_HOSTS = [
-        "*.mycses.ca"
+        "nem-scav.mycses.ca"
     ]
 
 CSRF_TRUSTED_ORIGINS = [
