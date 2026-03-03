@@ -25,11 +25,16 @@ def complete_waiver(details: UserDetails):
     details.save()
 
 
+def complete_wt_waiver(details: UserDetails):
+    details.wt_waiver_completed = True
+    details.save()
+
+
 def shift_check_in(signup: FacilShiftSignup, attendance: bool):
     if signup is None:
         return (False, "Signup not found!")
     shift = signup.shift
-    if shift.type == "wt" and not signup.user.details.waiver_completed:
+    if shift.type == "wt" and not (signup.user.details.waiver_completed and signup.user.details.wt_waiver_completed):
         return (False, "Incomplete waiver!")
     signup.attendance = attendance
     signup.save()
@@ -77,12 +82,11 @@ def get_eligible_shifts(user: User):
     my = FacilShiftSignup.objects.filter(user=user)
     for shift in shifts:
         found = False
-        signups = shift.facil_count
         for s in my:
             if s.shift == shift:
                 found = True
                 break
-        if signups < shift.max_facils and not found and not shift.is_passed:
+        if shift.can_sign_up(user.details) and not found:
             rshifts += [shift]
     return rshifts
 
@@ -95,10 +99,8 @@ def user_add_shift(user: User, shift: FacilShift):
     shift_count = len(FacilShiftSignup.objects.filter(user=user, shift__administrative=False))
     if shift_count >= max_shifts:
         return (False, "At shift limit")
-    if shift.is_passed:
-        return (False, "Shift has passed")
-    if shift.facil_count >= shift.max_facils:
-        return (False, "Shift is at capacity")
+    if not shift.can_sign_up(user.details):
+        return (False, "Shift is full or not released yet")
     signup = FacilShiftSignup.objects.filter(user=user, shift=shift).first()
     if signup is not None:
         return (False, "You have already signed up for this shift")
@@ -113,7 +115,7 @@ def user_remove_shift(user: User, shift: FacilShift):
     if shift is None:
         return (False, "Shift not found!")
     can_remove = True
-    if datetime.datetime.utcfromtimestamp(lockout_time) <= datetime.datetime.now() and lockout_time != 0:
+    if datetime.utcfromtimestamp(lockout_time) <= datetime.now() and lockout_time != 0:
         can_remove = False
     if not can_remove:
         return (False, "Removing shifts is disabled")
