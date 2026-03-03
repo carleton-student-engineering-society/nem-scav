@@ -35,7 +35,8 @@ from .email import send_email
 from django.contrib.auth.decorators import user_passes_test
 from common_models.models import Event, Calendar
 
-from .controllers import create_bus_shifts, complete_waiver, shift_check_in, global_toggle_weeklongs, get_user_shifts, \
+from .controllers import create_bus_shifts, complete_waiver, shift_check_in, \
+                         global_toggle_weeklongs, get_user_shifts, \
                          get_eligible_shifts, user_add_shift, user_remove_shift, copy_shift, run_report, \
                          toggle_scav_puzzle
 
@@ -83,7 +84,7 @@ def shift_checkin(request: HttpRequest, id: int) -> HttpResponse:
         return HttpResponse("Invalid shift!")
     if shift.checkin_user is not None and shift.checkin_user != request.user:
         if not request.user.has_perm('common_models.attendance_admin'):
-            return HttpResponse("You are not authorized to check in this shift1")
+            return HttpResponse("You are not authorized to check in this shift!")
     if request.method == "GET":
         signups = FacilShiftSignup.objects.filter(shift=shift).select_related("user").order_by('user__first_name')
         if shift.type == "wt":
@@ -97,7 +98,7 @@ def shift_checkin(request: HttpRequest, id: int) -> HttpResponse:
         action = request.POST["action"]
         if action == "attendance":
             switch = request.POST.get("switch", "")
-            att = switch == "True"
+            att = switch == "False"
             success = shift_check_in(signup, att)
             if not success[0]:
                 return HttpResponse(success[1])
@@ -126,7 +127,10 @@ def edit_calendar(request: HttpRequest, id: int) -> HttpResponse:
         form = forms.CalendarForm(request.POST)
         if not form.is_valid():
             return render(request, "edit_calendar.html", {"form": form})
-        form.save()
+        cal = Calendar.objects.get(id=id)
+        cal.name = form.cleaned_data['name']
+        cal.slug = form.cleaned_data['slug']
+        cal.save()
         return render(request, "edit_calendar.html", {"form": form})
     if id == 0:
         form = forms.CalendarForm()
@@ -151,7 +155,20 @@ def shift_edit(request: HttpRequest, id: int) -> HttpResponse:
         form = forms.ShiftForm(request.POST)
         if not form.is_valid():
             return render(request, "edit_shift.html", {"form": form})
-        form.save()
+        data = form.cleaned_data
+        shift = FacilShift.objects.get(id=id)
+        shift.name = data['name']
+        shift.desc = data['desc']
+        shift.flags = data['flags']
+        shift.start = data['start']
+        shift.end = data['end']
+        shift.max_facils = data['max_facils']
+        shift.administrative = data['administrative']
+        shift.checkin_user = data['checkin_user']
+        shift.type = data['type']
+        if shift.type is None:
+            shift.type = ""
+        shift.save()
         return render(request, "edit_shift.html", {"form": form})
     if id == 0:
         form = forms.ShiftForm()
@@ -189,6 +206,7 @@ def facil_shifts(request: HttpRequest) -> HttpResponse:
             rshifts = get_eligible_shifts(request.user)
             success = user_add_shift(request.user, shift)
             if not success[0]:
+                my_shifts = get_user_shifts(request.user)
                 logger.info(success[1])
                 return render(request, "facil_shift_signup.html",
                               {"shifts": rshifts, "success": False, "my_shifts": my_shifts, "can_remove": can_remove})
